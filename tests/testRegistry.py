@@ -6,7 +6,7 @@ import time
 
 sys.path.insert(0, os.path.abspath(sys.path[0]+"/.."))
 
-from libSmegol import Pocket, NonVolatilePocket
+from libSmeagol import Pocket, NonVolatilePocket
 
 
 # Helper class for dictionaries

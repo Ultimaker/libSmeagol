@@ -22,7 +22,7 @@ And will result in a json file with a contents/structure like this:
     {
         "extruder_1":
         {
-            "key" false
+            "key": false
         },
         "data": "My Precious!"
     }

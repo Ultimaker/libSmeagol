@@ -3,7 +3,7 @@ import logging
 import atexit
 
 from threading import Thread
-from libSmegol.pocket import Pocket
+from libSmeagol.pocket import Pocket
 
 log = logging.getLogger(__name__.split(".")[-1])
 

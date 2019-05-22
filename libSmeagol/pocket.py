@@ -3,7 +3,7 @@ import copy
 import threading
 import re
 
-from libSmegol.signal import Signal
+from libSmeagol.signal import Signal
 
 log = logging.getLogger(__name__.split(".")[-1])
 

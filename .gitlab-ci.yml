@@ -16,7 +16,9 @@ mypy:
 style:
     stage: lint
     script:
-    -   python3 -m pycodestyle --config .pycodestyle.ini libSmeagol
+    -   pip3 install pycodestyle
+    -   pip3 install flake8
+    -   python3 -m flake8 --config .pycodestyle.ini libSmeagol
     tags:
     -   linux
 
@@ -31,7 +33,7 @@ build:
     tags:
     -   linux
     artifacts:
-        name: dbus-interface-lib-$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHORT_SHA
+        name: libSmeagol-$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHORT_SHA
         paths:
         -   "*.deb"
         expire_in: 1 month
@@ -46,7 +48,6 @@ pytest:
     artifacts:
         reports:
             junit: pytest.xml
-
 
 push_to_repo:
     stage: publish

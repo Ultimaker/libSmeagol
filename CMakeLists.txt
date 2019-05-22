@@ -16,7 +16,7 @@ else()
     set(_install_path lib${LIB_SUFFIX}/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages)
 endif()
 
-install(DIRECTORY dbus_interface_lib DESTINATION ${_install_path} PATTERN __pycache__ EXCLUDE)
+install(DIRECTORY libSmeagol DESTINATION ${_install_path} PATTERN __pycache__ EXCLUDE)
 
 if(DEBIAN_PACKAGE)
     include(Package.cmake)
