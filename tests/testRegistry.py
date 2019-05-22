@@ -290,20 +290,19 @@ class PocketFileTestCase(unittest.TestCase):
         pocket.set(key, setting)
 
         value = pocket.getAsList(key)
-        self.assertEqual([], value)
+        self.assertEqual(None, value)
 
     ## Test getting a list using from an unknown key
     def testGettingListFromUnknownKey(self):
         # Arrange
         key = "test_bogus_list"
-        expected = [ ]
+        expected = None
 
         # Act
         pocket = Pocket()
         value = pocket.getAsList(key)
 
         # Assert
-        self.assertTrue(isinstance(value, list))
         self.assertEqual(expected, value)
 
     ## Test nested pocket

@@ -9,7 +9,7 @@ stages:
 mypy:
     stage: lint
     script:
-    -   python3 -m mypy --config-file=.mypy.ini --cache-dir=/dev/null -m libSmeagol
+    -   python3 -m mypy --config-file=.mypy.ini --cache-dir=/dev/null libSmeagol
     tags:
     -   linux
 

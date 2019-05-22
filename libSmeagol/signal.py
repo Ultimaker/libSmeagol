@@ -40,7 +40,7 @@ class Signal:
     #  @param kwargs The keyword arguments to pass along.
     def __init__(self, **kwargs) -> None:
         self.__functions = set()  # type: Set[Callable[[Any],None]]
-        self.__methods = cast(Dict[object, Callable[[object, Any], None]], WeakKeyDictionary())
+        self.__methods = cast(Dict[object, Set[Callable[[object, Any], None]]], WeakKeyDictionary())
         self.__signals = cast(Set["Signal"], WeakSet())
 
     def __call__(self):
@@ -52,12 +52,12 @@ class Signal:
     def emit(self, *args, **kwargs) -> None:
         # Call handler functions
         for func in self.__functions:
-            func(*args, **kwargs)
+            func(*args, **kwargs)  # type: ignore
 
         # Call handler methods
         for dest, funcs in self.__methods.copy().items():
-            for func in funcs.copy():
-                func(dest, *args, **kwargs)
+            for func2 in funcs:
+                func2(dest, *args, **kwargs)  # type: ignore
 
         # Emit connected signals
         for signal in self.__signals.copy():
@@ -84,12 +84,12 @@ class Signal:
     #   \param connector The signal or slot to disconnect.
     def disconnect(self, connector: Union[Callable, "Signal"]) -> None:
         if connector in self.__signals:
-            self.__signals.remove(connector)
-        elif inspect.ismethod(connector) and connector.__self__ in self.__methods:
-            self.__methods[connector.__self__].remove(connector.__func__)
+            self.__signals.remove(connector)  # type: ignore
+        elif inspect.ismethod(connector) and connector.__self__ in self.__methods:  # type: ignore
+            self.__methods[connector.__self__].remove(connector.__func__)  # type: ignore
         else:
             if connector in self.__functions:
-                self.__functions.remove(connector)
+                self.__functions.remove(connector)  # type: ignore
 
     ##  Disconnect all connected slots.
     def disconnectAll(self) -> None:
