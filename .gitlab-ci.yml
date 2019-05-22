@@ -1,0 +1,66 @@
+image: registry.gitlab.com/ultimaker/embedded/build-environment:umbusservice
+
+stages:
+-   lint
+-   build
+-   test
+-   publish
+
+mypy:
+    stage: lint
+    script:
+    -   python3 -m mypy --config-file=.mypy.ini --cache-dir=/dev/null -m libSmeagol
+    tags:
+    -   linux
+
+style:
+    stage: lint
+    script:
+    -   python3 -m pycodestyle --config .pycodestyle.ini libSmeagol
+    tags:
+    -   linux
+
+build:
+    stage: build
+    script:
+    -   mkdir _build
+    -   cd _build
+    -   cmake .. -DDEBIAN_PACKAGE=ON
+    -   make package
+    -   mv *.deb ..
+    tags:
+    -   linux
+    artifacts:
+        name: dbus-interface-lib-$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHORT_SHA
+        paths:
+        -   "*.deb"
+        expire_in: 1 month
+
+pytest:
+    stage: test
+    tags:
+    -   linux
+    script:
+    -   export PYTHONPATH=.
+    -   pytest --junit-xml=pytest.xml
+    artifacts:
+        reports:
+            junit: pytest.xml
+
+
+push_to_repo:
+    stage: publish
+    tags:
+    -   linux
+    script:
+    -   eval $(ssh-agent -s)
+    -   ssh-add <(echo "$PACKAGE_REPO_DEPLOY_KEY")
+    -   git clone git@github.com:ultimaker/jedi-package-repository
+    -   cd jedi-package-repository
+    -   git checkout misp || git checkout -b misp
+    -   mv ../*.deb .
+    -   git add *.deb
+    -   git commit -m "Automatic push of $CI_PROJECT_NAME $CI_COMMIT_REF_NAME $CI_COMMIT_TAG"
+    -   git push origin misp
+    only:
+    -   tags

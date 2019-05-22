@@ -1,0 +1,268 @@
+import logging
+import copy
+import threading
+import re
+
+from libSmegol.signal import Signal
+
+log = logging.getLogger(__name__.split(".")[-1])
+
+
+## This class handles the storing of settings and housekeeping of the settings.
+#  To make sure, the store cannot be changed directly, whenever a value is retrieved, a copy is returned.
+#  This way, it's made sure that structure isn't immediately done within the settings store itself.
+#  When settings are changed (and differ from the current value), they will be saved after a short delay
+class Pocket:
+
+    ## Public
+
+    ## Initializes the registry functionality
+    #  @param preferences Allows to initialize with preferences (one time only)
+    def __init__(self, preferences=None):
+        if preferences is None:
+            preferences = {}
+
+        # Small adjustment to allow to use a registry itself as an argument for the preferences
+        if isinstance(preferences, Pocket):
+            log.info("Accessing the preferences dictionary: %r", preferences.__preferences)
+            preferences = copy.deepcopy(preferences.__preferences)
+            assert isinstance(preferences, dict)
+
+        self.__preferences = preferences
+        self.__lock = threading.RLock()
+        self.__decimal_number_pattern = re.compile(self.__DECIMAL_NUMBER_EXPRESSION)
+        self.__on_changed = Signal()
+
+    ## Check if a key exists in this registry.
+    # The normal get functions log warnings when unknown keys are retrieved, so this can be used to test for existence of a key without causing log messages.
+    #  @param key The setting
+    #  @return bool True when the setting exists in this registry, false if not.
+    def has(self, key):
+        with self.__lock:
+            return key in self.__preferences
+
+    #  A deepcopy is made so the setting can never be changed directly (and with that bypassing the trigger to save)
+    #  @param key The setting
+    #  @param default The default value to return
+    #  @return Returns the setting value if found, or the specified default if not
+    def get(self, key, default=None):
+        result = self.__preferences.get(key, default)
+        return copy.deepcopy(result)
+
+    ## Gets the setting as an integer (cast). If the cast fails, the default value is returned.
+    #  @param key The setting
+    #  @param default The default value to return
+    #  @retval default Returns the default value if setting is not found or the cast fails
+    #  @retval int Returns the setting value as an integer
+    def getAsInt(self, key, default=None):
+        return self.__getAsType(key, default, int)
+
+    ## Gets the setting as a float (cast). If the cast fails, the default value is returned.
+    #  @param key The setting
+    #  @param default The default value to return
+    #  @retval default Returns the default value if setting is not found or the cast fails
+    #  @retval float Returns the setting value as a float
+    def getAsFloat(self, key, default=None):
+        return self.__getAsType(key, default, float)
+
+    ## Gets the setting as a string (cast). If the cast fails, the default value is returned.
+    #  @param key The setting
+    #  @param default The default value to return
+    #  @retval default Returns the default value if setting is not found or the cast fails
+    #  @retval int Returns the setting value as a string
+    def getAsString(self, key, default=None):
+        return self.__getAsType(key, default, str)
+
+    ## Gets the setting as a boolean (cast). If the cast fails, the default value is returned.
+    #  @param key The setting
+    #  @param default The default value to return
+    #  @retval default Returns the default value if setting is not found or the cast fails
+    #  @retval int Returns the setting value as a boolean
+    def getAsBoolean(self, key, default=None):
+        return self.__getAsType(key, default, bool)
+
+    ## Gets the value of the key as a Pocket instance (registry is similar to a dict)
+    #  @param key The setting
+    #  @param default The default dictionary if no key was found to return
+    #  @retval Pocket When the value is a dictionary, it will return a new Pocket class
+    #          In case the data is not a dictionary, a copy of the "default" value will be returned
+    def getAsSubPocket(self, key, default=None):
+        if default is None:
+            default = {}
+        with self.__lock:
+            value = None
+            try:
+                value = self.__preferences[key]
+            except KeyError:
+                value = copy.deepcopy(default)
+                self.set(key, value)
+            if isinstance(value, dict):
+                sub_pocket = Pocket(value)
+                # Implement that this pocket gets a signal when the sub-pocket changes
+                sub_pocket.__on_changed.connect(self._handleOnChangeEvent)
+                return sub_pocket
+            else:
+                log.warning("Getting key '%s' as pocket for pocket '%s' fails for not being a dictionary but a %s!", key, self, type(value))
+                # Default behaviour is to return (copy) of the default
+                return None
+
+    def getAsRegistry(self, key, default=None):
+        return self.getAsSubPocket(key, default)
+
+    ## Gets the value of the key as a list
+    #  @param key The setting
+    #  @param default The default list if no key was found to return
+    #  @retval list When the value is a list
+    #          In case the data is not a list, a copy of the "default" value will be returned
+    def getAsList(self, key, default=None):
+        if default is None:
+            default = []
+        value = self.get(key, default)
+        if isinstance(value, list):
+            return value
+        else:
+            log.warning("Getting key '%s' as registry fails for not being a list!", key)
+            # Default behaviour is to return (copy) of the default
+            return copy.deepcopy(default)
+
+    ## Returns a copy of all the settings in the store
+    #  @return Returns a copy of the settings as a dictionary
+    def getAll(self):
+        with self.__lock:
+            return copy.deepcopy(self.__preferences)
+
+    ## Converts values from the registry into a tuple
+    #  @param requested_keys The list of keys which values should be returned as a tuple
+    def getValuesFromKeysAsTuple(self, requested_keys):
+        assert isinstance(requested_keys, list)
+
+        value_list = []
+        for key in requested_keys:
+            if self.has(key):
+                value_list.append(self.get(key))
+            else:
+                value_list.append(None)
+        return tuple(value_list)
+
+    ## Sets the value of a setting in the store and sets a flag that changes have been made so it will save those changes
+    def set(self, key, value):
+        with self.__lock:
+            if (key not in self.__preferences) or (self.__preferences[key] != value):
+                self.__preferences[key] = value
+                # Signal observers this registry has changed
+                self._handleOnChangeEvent()
+
+    ## Sets or updates the setting as an int type; if the casting fails, the value will be set as is
+    #  @param key The setting to add or update
+    #  @param value The value to set
+    def setAsInt(self, key, value):
+        self.__setAsType(key, value, int)
+
+    ## Sets or updates the setting as a float type; if the casting fails, the value will be set as is
+    #  @param key The setting to add or update
+    #  @param value The value to set
+    def setAsFloat(self, key, value):
+        self.__setAsType(key, value, float)
+
+    ## Sets or updates the setting as a string type; if the casting fails, the value will be set as is
+    #  @param key The setting to add or update
+    #  @param value The value to set
+    def setAsString(self, key, value):
+        self.__setAsType(key, value, str)
+
+    ## Sets or updates the setting as a boolean type; if the casting fails, the value will be set as is
+    #  @param key The setting to add or update
+    #  @param value The value to set
+    def setAsBoolean(self, key, value):
+        self.__setAsType(key, value, bool)
+
+    ## Sets or updates the settings as a Pocket
+    #  @param key The setting to add or update
+    #  @param value The value (registry) to set
+    def setAsSubPocket(self, key, value):
+        if not isinstance(value, Pocket):
+            raise ValueError("Trying to set key '%s' as a registry while it is not!", key)
+        self.set(key, value.__preferences)
+
+    def setAsRegistry(self, key, value):
+        self.setAsSubPocket(key, value)
+
+    ## Sets or updates the settings as a list
+    #  @param key The setting to add or update
+    #  @param value The value (list) to set
+    def setAsList(self, key, value):
+        if not isinstance(value, list):
+            raise ValueError("Trying to set key '%s' as a list while it is not!", key)
+        self.set(key, value)
+
+    ## Removes a key from the dictionary
+    #  @param key The setting to remove
+    def delete(self, key):
+        with self.__lock:
+            if self.has(key):   # note: can only work with RLock
+                del(self.__preferences[key])
+                # Signal observers this registry has changed
+                self._handleOnChangeEvent()
+
+    ## Protected
+
+    ## Handles an onChangeEvent which happens whenever a new value is added or an existing is changed
+    def _handleOnChangeEvent(self):
+        self.__on_changed.emit()
+
+    ## Resets the dictionary
+    def _setPreferences(self, preferences):
+        with self.__lock:
+            self.__preferences = preferences
+
+    ## Private
+
+    ## The regular expression to validate floating point numbers
+    __DECIMAL_NUMBER_EXPRESSION = "^-?\d+(,\d+)*(\.\d+(e\d+)?)?$"
+
+    ## Gets the setting as the specified type. If the cast fails, the default value is returned.
+    #  @param key The setting
+    #  @param default The default value to return
+    #  @param to_type type to cast the result into (except when returning the default)
+    #  @return Returns the value as the new type or the default value in case of failure
+    def __getAsType(self, key, default, to_type):
+        value = self.get(key, default)
+        if value is None:
+            return default
+        else:
+            return self.__castSafe(value, to_type, default)
+
+    ## Sets the setting as the specified type. If the cast fails, the value is not set to prevent mayhem
+    #  @param key The setting to update or add
+    #  @param value The value to set
+    #  @param to_type The type to set into
+    def __setAsType(self, key, value, to_type):
+        casted_value = self.__castSafe(value, to_type)
+        if casted_value is None:
+            raise ValueError("Cannot set %s as type %s" % (value, to_type))
+        self.set(key, casted_value)
+
+    ## Execute a safe typecast (if possible)
+    #  Remarks: Handling conversion from string to boolean or vv needs to be addressed
+    #  @param value The original value
+    #  @param to_type The type to cast into
+    #  @param default The default return value in case of casting failure
+    #  @return Returns the value as the new type or the default value in case of failure
+    def __castSafe(self, value, to_type, default=None):
+        try:
+            if (type(bool()) == to_type) and (type(str()) == type(value)):
+                string_value = value.lower()
+                if string_value in {"no", "false", "0"}:
+                    return False
+                if self.__decimal_number_pattern.match(value):
+                    return int(self.__castSafe(value, float)) != 0
+                else:
+                    return True
+            return to_type(value)
+        except ValueError:
+            log.warning("Cannot cast %s to type %s", value, to_type)
+            return default
+
+    ## default python function to get the string representation of the object.
+    def __repr__(self):
+        return "Pocket:" + str(self.__preferences)
