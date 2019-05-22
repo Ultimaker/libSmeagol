@@ -218,7 +218,7 @@ class Pocket:
     ## Private
 
     ## The regular expression to validate floating point numbers
-    __DECIMAL_NUMBER_EXPRESSION = "^-?\d+(,\d+)*(\.\d+(e\d+)?)?$"
+    __DECIMAL_NUMBER_EXPRESSION = "^-?\d+(,\d+)*(\.\d+(e\d+)?)?$"  # noqa: W605
 
     ## Gets the setting as the specified type. If the cast fails, the default value is returned.
     #  @param key The setting

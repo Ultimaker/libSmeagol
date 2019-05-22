@@ -104,7 +104,7 @@ class NonVolatilePocket(TimerPocket):
             try:
                 with open(self.__preferences_file, "r") as f:
                     preferences = json.load(f)
-            except:
+            except Exception:
                 log.warning("Error reading preferences file " + self.__preferences_file)
                 preferences = dict()
 
@@ -135,5 +135,5 @@ class NonVolatilePocket(TimerPocket):
                 dir_fd = os.open(directory, os.O_DIRECTORY | os.O_RDONLY)
                 os.fsync(dir_fd)
                 os.close(dir_fd)
-        except:
+        except Exception:
             log.exception("Error writing preferences " + self.__preferences_file)
