@@ -5,7 +5,7 @@ The sub pockets support further sub pockets almost indefinitely and changes prop
 
 ![alt text][logo]
 
-Since Smeagol (Later known as Gollum) stores his "Precious" in a pocket most of the time The storage objects used will be called Pockets. They used to be "Register" but when we took the library out of Opinicus and decided to call it libSmeagol this did not make sense any more.
+Since Smeagol (Later known as Gollum) stores his "Precious" in a pocket most of the time The storage objects used will be called Pockets. They used to be "Register" but when we took the library out of Opinicus and decided to call it libSmeagol this made even less sense than it did before.
 
 You create a storage object that saves to file:
 ```python
