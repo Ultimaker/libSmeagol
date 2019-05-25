@@ -2,8 +2,8 @@ image: registry.gitlab.com/ultimaker/embedded/build-environment:umbusservice
 
 stages:
 -   lint
--   build
 -   test
+-   build
 -   publish
 
 mypy:
