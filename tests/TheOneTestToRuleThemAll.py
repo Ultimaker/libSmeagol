@@ -30,7 +30,7 @@ class Sauron:
     def forgeRing() -> TheOneRing:
         ring = Node("Cruelty")
         ring.nextval = Node("Malice")
-        ring.nextval.nextval = Node("will to Dominate")
+        ring.nextval.nextval = Node("Will to Dominate all life")
         ring.nextval.nextval.nextval = ring
         for _ in range(random.randint(0,255)):
             ring = ring.nextval
