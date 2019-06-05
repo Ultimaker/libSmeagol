@@ -51,7 +51,7 @@ class Smeagol:
         self.pocket = libSmeagol.Pocket()
 
     def kill(self, brother: Deagol) -> None:
-        self.pocket.set("ring", str(brother.ring))
+        self.pocket.set("My Precious!", str(brother.ring))
 
 
 class TheOneTestToRuleThemAll(unittest.TestCase):
@@ -72,4 +72,4 @@ class TheOneTestToRuleThemAll(unittest.TestCase):
 
         gollum = smeagol
 
-        assert gollum.pocket.get("ring") is not None
+        assert gollum.pocket.get("My Precious!") is not None

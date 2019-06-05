@@ -125,7 +125,7 @@ class NonVolatilePocket(TimerPocket):
             # First write the preference file to a new file on disk before we replace the old file.
             temp_filename = "%s.new" % (self.__preferences_file)
             with open(temp_filename, "w") as f:
-                json.dump(preferences, f, indent=4)
+                json.dump(preferences, f, indent=4, sort_keys=True)
                 # Flush the file to disk, and fsync it so it is written to the filesystem.
                 f.flush()
                 os.fsync(f.fileno())
