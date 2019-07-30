@@ -107,3 +107,6 @@ venv.bak/
 # KDevelop
 *.kate-swp
 *kdev*
+
+# MacOs
+.DS_Store
