@@ -9,6 +9,7 @@ __pycache__/
 # Distribution / packaging
 .Python
 build/
+_build/
 _build_armhf/
 develop-eggs/
 dist/
@@ -25,6 +26,7 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
+*.deb
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -38,6 +40,7 @@ pip-delete-this-directory.txt
 
 # Unit test / coverage reports
 htmlcov/
+cov_report/
 .tox/
 .coverage
 .coverage.*

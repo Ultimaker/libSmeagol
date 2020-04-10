@@ -1,0 +1,7 @@
+pytest
+pytest-cov
+mypy
+pycodestyle
+lizard
+vulture
+pytest-mock==1.10.4
