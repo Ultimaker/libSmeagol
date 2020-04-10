@@ -19,7 +19,7 @@ class NonVolatilePocket(TimerPocket):
     ## Initializes a thread for the registry to handle the automatic saving
     #  @param filename The filename to read/write the preferences (absolute path starts with '/')
     #  @param save_interval The minimal interval between saving of changes, with a default of 5 seconds
-    def __init__(self, filename: str, save_interval: int=5) -> None:
+    def __init__(self, filename: str, save_interval: int = 5) -> None:
         super().__init__(save_interval)
         # Variable needed for naming of thread to be used
         self.__preferences_file = str(os.path.join(self.__BASE_PATH, filename))
@@ -42,7 +42,7 @@ class NonVolatilePocket(TimerPocket):
 
     ## Stops the registry and erases all settings (remove file).
     #  @param restart_after_erase If true then the registryfile will be reopened and the thread started again
-    def erase(self, *, restart_after_erase: bool=True) -> None:
+    def erase(self, *, restart_after_erase: bool = True) -> None:
         self.stop()
         try:
             log.info("Wiping all registry keys...")
