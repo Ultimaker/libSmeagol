@@ -19,7 +19,7 @@ class Pocket:
 
     ## Initializes the registry functionality
     #  @param preferences Allows to initialize with preferences (one time only)
-    def __init__(self, preferences: Optional[Union[Dict[str, Any], "Pocket"]] = None) -> None:
+    def __init__(self, preferences: Optional[Union[Dict[str, Any], "Pocket"]]=None) -> None:
         if preferences is None:
             self.__preferences = {}  # type: Dict[str, Any]
             # Small adjustment to allow to use a registry itself as an argument for the preferences
@@ -46,7 +46,7 @@ class Pocket:
     #  @param key The setting
     #  @param default The default value to return
     #  @return Returns the setting value if found, or the specified default if not
-    def get(self, key: str, default: Optional[Any] = None) -> Any:
+    def get(self, key: str, default: Optional[Any]=None) -> Any:
         result = self.__preferences.get(key, default)
         return copy.deepcopy(result)
 
@@ -55,7 +55,7 @@ class Pocket:
     #  @param default The default value to return
     #  @retval default Returns the default value if setting is not found or the cast fails
     #  @retval int Returns the setting value as an integer
-    def getAsInt(self, key: str, default = None) -> Optional[int]:
+    def getAsInt(self, key: str, default=None) -> Optional[int]:
         return self.__getAsType(key, default, int)
 
     ## Gets the setting as a float (cast). If the cast fails, the default value is returned.
@@ -63,7 +63,7 @@ class Pocket:
     #  @param default The default value to return
     #  @retval default Returns the default value if setting is not found or the cast fails
     #  @retval float Returns the setting value as a float
-    def getAsFloat(self, key: str, default = None) -> Optional[float]:
+    def getAsFloat(self, key: str, default=None) -> Optional[float]:
         return self.__getAsType(key, default, float)
 
     ## Gets the setting as a string (cast). If the cast fails, the default value is returned.
@@ -71,7 +71,7 @@ class Pocket:
     #  @param default The default value to return
     #  @retval default Returns the default value if setting is not found or the cast fails
     #  @retval int Returns the setting value as a string
-    def getAsString(self, key: str, default = None) -> Optional[str]:
+    def getAsString(self, key: str, default=None) -> Optional[str]:
         return self.__getAsType(key, default, str)
 
     ## Gets the setting as a boolean (cast). If the cast fails, the default value is returned.
@@ -79,7 +79,7 @@ class Pocket:
     #  @param default The default value to return
     #  @retval default Returns the default value if setting is not found or the cast fails
     #  @retval int Returns the setting value as a boolean
-    def getAsBoolean(self, key: str, default = None) -> Optional[bool]:
+    def getAsBoolean(self, key: str, default=None) -> Optional[bool]:
         return self.__getAsType(key, default, bool)
 
     ## Gets the value of the key as a Pocket instance (registry is similar to a dict)
@@ -87,7 +87,7 @@ class Pocket:
     #  @param default The default dictionary if no key was found to return
     #  @retval Pocket When the value is a dictionary, it will return a new Pocket class
     #          In case the data is not a dictionary, a copy of the "default" value will be returned
-    def getAsSubPocket(self, key: str, default = None) -> Optional["Pocket"]:
+    def getAsSubPocket(self, key: str, default=None) -> Optional["Pocket"]:
         if default is None:
             default = {}
         with self.__lock:
@@ -107,7 +107,7 @@ class Pocket:
                 # Default behaviour is to return (copy) of the default
                 return None
 
-    def getAsRegistry(self, key: str, default = None) -> Optional["Pocket"]:
+    def getAsRegistry(self, key: str, default=None) -> Optional["Pocket"]:
         return self.getAsSubPocket(key, default)
 
     ## Gets the value of the key as a list
@@ -115,7 +115,7 @@ class Pocket:
     #  @param default The default list if no key was found to return
     #  @retval list When the value is a list
     #          In case the data is not a list, a copy of the "default" value will be returned
-    def getAsList(self, key: str, default = None) -> Optional[List]:
+    def getAsList(self, key: str, default=None) -> Optional[List]:
         value = self.get(key, default)
         if isinstance(value, list):
             return value
