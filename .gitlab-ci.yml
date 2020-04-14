@@ -1,67 +1,63 @@
-image: registry.gitlab.com/ultimaker/embedded/build-environment:umbusservice
+include:
+  - project: ultimaker/embedded/prime-jedi
+    ref: master
+    file: /gitlab_ci_templates/jedi-gitlab-ci-template.yml
 
-stages:
--   lint
--   test
--   build
--   publish
+# Prepare stage, prepares a Docker image based on the Docker file in /docker_env subfolder of the repository.
+# To have early feedback when setting up your Docker image, make sure you implement a buildenv_check.sh script,
+# see the exeample in this repository.
+# ==================================================================================
 
-mypy:
-    stage: lint
-    script:
-    -   python3 -m mypy --config-file=.mypy.ini --cache-dir=/dev/null libSmeagol
-    tags:
-    -   linux
+prepare_environment:
+  extends:
+    - .jobs_common
+    - .environment_common
+  stage: prepare
+  variables:
+    GIT_STRATEGY: clone
+  script:
+    - ./make_docker.sh "${BUILD_PIPELINE_IMAGE}"
+
+complexity:
+  extends:
+    - .jobs_common
+    - .build_test_common
+  stage: test
+  allow_failure: true
+  script:
+    - ./ci/complexity_analysis.sh
+
+dead_code:
+  extends:
+    - .jobs_common
+    - .build_test_common
+  stage: test
+  allow_failure: true
+  script:
+    - ./ci/dead_code_analysis.sh
 
 style:
-    stage: lint
-    script:
-    -   pip3 install pycodestyle
-    -   pip3 install flake8
-    -   python3 -m flake8 --config .pycodestyle.ini libSmeagol
-    tags:
-    -   linux
+  extends:
+    - .jobs_common
+    - .build_test_common
+  stage: test
+  script:
+    - git fetch origin master:master
+    - ./ci/style_analysis.sh
 
-build:
-    stage: build
-    script:
-    -   mkdir _build
-    -   cd _build
-    -   cmake .. -DDEBIAN_PACKAGE=ON
-    -   make package
-    -   mv *.deb ..
-    tags:
-    -   linux
-    artifacts:
-        name: libSmeagol-$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHORT_SHA
-        paths:
-        -   "*.deb"
-        expire_in: 1 month
+mypy:
+  extends:
+    - .jobs_common
+    - .build_test_common
+  stage: test
+  script:
+    - git fetch origin master:master
+    - ./ci/mypy.sh
 
 pytest:
+    extends:
+        - .jobs_common
+        - .build_test_common
     stage: test
-    tags:
-    -   linux
     script:
-    -   export PYTHONPATH=.
-    -   pytest --junit-xml=pytest.xml
-    artifacts:
-        reports:
-            junit: pytest.xml
-
-push_to_repo:
-    stage: publish
-    tags:
-    -   linux
-    script:
-    -   eval $(ssh-agent -s)
-    -   ssh-add <(echo "$PACKAGE_REPO_DEPLOY_KEY")
-    -   git clone git@github.com:ultimaker/jedi-package-repository
-    -   cd jedi-package-repository
-    -   git checkout misp || git checkout -b misp
-    -   mv ../*.deb .
-    -   git add *.deb
-    -   git commit -m "Automatic push of $CI_PROJECT_NAME $CI_COMMIT_REF_NAME $CI_COMMIT_TAG"
-    -   git push origin misp
-    only:
-    -   tags
+        - ./ci/pytest.sh

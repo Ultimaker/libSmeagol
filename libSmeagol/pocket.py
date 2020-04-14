@@ -28,7 +28,7 @@ class Pocket:
             self.__preferences = copy.deepcopy(preferences.__preferences)
             assert isinstance(preferences, dict)
         else:
-            self.__preferences = cast(Dict[str, Any], preferences)
+            self.__preferences = preferences
 
         self.__lock = threading.RLock()
         self.__decimal_number_pattern = re.compile(self.__DECIMAL_NUMBER_EXPRESSION)
@@ -247,7 +247,7 @@ class Pocket:
     #  @param to_type The type to cast into
     #  @param default The default return value in case of casting failure
     #  @return Returns the value as the new type or the default value in case of failure
-    def __castSafe(self, value: Any, to_type: Type, default: Any=None) -> Any:
+    def __castSafe(self, value: Any, to_type: Type, default: Any = None) -> Any:
         try:
             if (type(bool()) == to_type) and (type(str()) == type(value)):
                 string_value = value.lower()
