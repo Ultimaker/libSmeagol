@@ -1,3 +1,5 @@
+Copyright © Ultimaker 2019-2021
+
 # libSmeagol
 Lib Smeagol is intended to store precious data for yourself, such as settings.
 It stores key value pairs or sub groups (called subPocket(s)) of key/value pairs.
