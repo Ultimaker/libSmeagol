@@ -21,6 +21,7 @@ style:
     -   python3 -m flake8 --config .pycodestyle.ini libSmeagol
     tags:
     -   linux
+    allow_failure: true
 
 build:
     stage: build
