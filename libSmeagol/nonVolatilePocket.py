@@ -28,6 +28,11 @@ class NonVolatilePocket(TimerPocket):
         # Start the timer
         self._startTimerThread()
 
+    ## @brief Allow setting of the base path storage location
+    @classmethod
+    def setStorageLocation(cls, *, base_path):
+        cls.__BASE_PATH = base_path
+
     ## Gets the filename, including the new path
     #  @return The fully qualified filename
     def getFilename(self) -> str:
@@ -44,13 +49,13 @@ class NonVolatilePocket(TimerPocket):
     #  @param restart_after_erase If true then the registryfile will be reopened and the thread started again
     def erase(self, *, restart_after_erase: bool=True) -> None:
         self.stop()
+        self._setPreferences({})
         try:
             log.info("Wiping all registry keys...")
             os.remove(self.__preferences_file)
         except OSError as exception:
             log.error("Unable to remove settings file '%s', because %s", self.__preferences_file, exception.strerror)
             pass
-        self._setPreferences({})
         if restart_after_erase:
             self.__load()
             self._start()

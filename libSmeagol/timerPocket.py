@@ -33,6 +33,7 @@ class TimerPocket(Pocket):
     ## Stops the thread from running, but does not stop the thread itself
     def stop(self) -> None:
         self.__running = False
+        self.__thread.join()
 
     ## Protected
 
@@ -82,7 +83,7 @@ class TimerPocket(Pocket):
         self.__running = True
         thread_name = self._getRegistryId()
         log.info("Setting up thread for " + thread_name)
-        self.__thread = Thread(name=thread_name, target=self.__run, daemon=True)
+        self.__thread = Thread(name=thread_name, target=self.__run)
         self.__thread.start()
 
     ## During the existence of the instance, the running thread will be calling this function.
