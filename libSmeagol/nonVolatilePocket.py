@@ -19,7 +19,7 @@ class NonVolatilePocket(TimerPocket):
     ## Initializes a thread for the registry to handle the automatic saving
     #  @param filename The filename to read/write the preferences (absolute path starts with '/')
     #  @param save_interval The minimal interval between saving of changes, with a default of 5 seconds
-    def __init__(self, filename: str, save_interval: int=5) -> None:
+    def __init__(self, filename: str, save_interval: int = 5) -> None:
         super().__init__(save_interval)
         # Variable needed for naming of thread to be used
         self.__preferences_file = str(os.path.join(self.__BASE_PATH, filename))
@@ -42,7 +42,7 @@ class NonVolatilePocket(TimerPocket):
 
     ## Stops the registry and erases all settings (remove file).
     #  @param restart_after_erase If true then the registryfile will be reopened and the thread started again
-    def erase(self, *, restart_after_erase: bool=True) -> None:
+    def erase(self, *, restart_after_erase: bool = True) -> None:
         self.stop()
         try:
             log.info("Wiping all registry keys...")
@@ -55,7 +55,8 @@ class NonVolatilePocket(TimerPocket):
             self.__load()
             self._start()
 
-    ## Implements a special function that will erase all settings, except the keys mentioned in the keys_to_save list and add the extra settings at the end
+    ## Implements a special function that will erase all settings,
+    # except the keys mentioned in the keys_to_save list and add the extra settings at the end
     #  @param keys_to_backup The list of keys to backup prior to removing all settings
     #  @param settings_to_add The dictionary of key/values to add after te reset and restoration of the backed up key/values
     def backupAndSetup(self, keys_to_backup: List[str], settings_to_add: Dict[str, Any]) -> None:
@@ -105,8 +106,8 @@ class NonVolatilePocket(TimerPocket):
             try:
                 with open(self.__preferences_file, "r") as f:
                     preferences = json.load(f)
-            except Exception:
-                log.warning("Error reading preferences file " + self.__preferences_file)
+            except Exception:  # pylint: disable=broad-except
+                log.warning("Error reading preferences file: '%s'", self.__preferences_file)
                 preferences = dict()
 
         self._setPreferences(preferences)

@@ -20,10 +20,10 @@ class TimerPocket(Pocket):
 
     ## Initializes a thread for the registry to execute some action after some time has passed
     #  @param timer_interval The minimal interval between before the action is to be executed in seconds
-    def __init__(self, timer_interval: int=5) -> None:
+    def __init__(self, timer_interval: int = 5) -> None:
         super().__init__()
         self.__timer_interval = timer_interval
-        self.__last_timer_check = None  #type: Optional[float]
+        self.__last_timer_check = None  # type: Optional[float]
         self.__running = False
         self.__thread = None  # type: Optional[Thread]
 
@@ -37,7 +37,7 @@ class TimerPocket(Pocket):
     ## Protected
 
     ## Starts the timer check if not yet set or enforces this if reset_start is true
-    def _startTimerCheck(self, *, reset_start: bool=True) -> None:
+    def _startTimerCheck(self, *, reset_start: bool = True) -> None:
         if reset_start or self.__last_timer_check is None:
             self.__last_timer_check = time.monotonic()
 
