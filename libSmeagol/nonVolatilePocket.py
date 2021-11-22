@@ -75,9 +75,8 @@ class NonVolatilePocket(TimerPocket):
         log.info("Adding extra settings (%s)", self.__preferences_file)
         for key in settings_to_add.keys():
             self.set(key, settings_to_add[key])
-        self.forceSave()
 
-    ## Protected
+        self.forceSave()
 
     ## Executes the action to be performed. Protected and must be overridden by derived classes
     def _executeAction(self) -> None:
@@ -126,8 +125,9 @@ class NonVolatilePocket(TimerPocket):
                 # Flush the file to disk, and fsync it so it is written to the filesystem.
                 f.flush()
                 os.fsync(f.fileno())
-            # use os.replace to replace the old preference file with the new file. This is an atomic operation.
-            os.replace(temp_filename, self.__preferences_file)
+
+            os.rename(temp_filename, self.__preferences_file)
+
             # Open the directory containing the preference file, and fsync it. This forces the rename to disk.
             if hasattr(os, "O_DIRECTORY"):
                 dir_fd = os.open(directory, os.O_DIRECTORY | os.O_RDONLY)
