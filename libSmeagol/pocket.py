@@ -88,7 +88,10 @@ class Pocket:
     #  @param default The default dictionary if no key was found to return
     #  @retval Pocket When the value is a dictionary, it will return a new Pocket class
     #          In case the data is not a dictionary, a copy of the "default" value will be returned
-    def getAsSubPocket(self, key: str, default: Optional["Pocket"] = None) -> Optional["Pocket"]:
+    def getAsSubPocket(
+        self,
+        key: str, default: Union[Dict[Any, Any], Optional["Pocket"]] = None
+    ) -> Union[Dict[Any, Any], Optional["Pocket"]]:
         if default is None:
             default = {}
         with self.__lock:
@@ -111,7 +114,7 @@ class Pocket:
                 # Default behaviour is to return (copy) of the default
                 return None
 
-    def getAsRegistry(self, key: str, default: Optional["Pocket"] = None) -> Optional["Pocket"]:
+    def getAsRegistry(self, key: str, default: Optional["Pocket"] = None) -> Union[Dict[Any, Any], Optional["Pocket"]]:
         return self.getAsSubPocket(key, default)
 
     ## Gets the value of the key as a list
@@ -136,7 +139,7 @@ class Pocket:
 
     ## Converts values from the registry into a tuple
     #  @param requested_keys The list of keys which values should be returned as a tuple
-    def getValuesFromKeysAsTuple(self, requested_keys: List[str]) -> Tuple[Any]:
+    def getValuesFromKeysAsTuple(self, requested_keys: List[str]) -> Tuple[Any, ...]:
         assert isinstance(requested_keys, list)
 
         value_list = []
