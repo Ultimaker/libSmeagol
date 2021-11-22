@@ -81,7 +81,7 @@ class TimerPocket(Pocket):
     def __startThread(self) -> None:
         self.__running = True
         thread_name = self._getRegistryId()
-        log.info("Setting up thread for " + thread_name)
+        log.info("Setting up thread '%s'", thread_name)
         self.__thread = Thread(name=thread_name, target=self.__run, daemon=True)
         self.__thread.start()
 

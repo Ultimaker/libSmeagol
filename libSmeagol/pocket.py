@@ -32,7 +32,7 @@ class Pocket:
 
         self.__lock = threading.RLock()
         self.__decimal_number_pattern = re.compile(self.__DECIMAL_NUMBER_EXPRESSION)
-        self.__on_changed = Signal()
+        self.__on_changed = Signal(name="Pocket.__on_changed")
 
     ## Check if a key exists in this registry.
     # The normal get functions log warnings when unknown keys are retrieved,
