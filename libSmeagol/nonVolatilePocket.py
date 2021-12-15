@@ -97,7 +97,7 @@ class NonVolatilePocket(TimerPocket):
     def __load(self) -> None:
         preferences = {}  # type: Dict[str, Any]
         if os.path.isfile(self.__preferences_file):
-            log.info("Reading preferences (%s)", self.__preferences_file)
+            log.info(f"Reading preferences ({self.__preferences_file})")
             try:
                 with open(self.__preferences_file, "r") as f:
                     preferences = json.load(f)
