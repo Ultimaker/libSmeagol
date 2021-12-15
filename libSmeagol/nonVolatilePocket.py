@@ -62,7 +62,7 @@ class NonVolatilePocket(TimerPocket):
     #  @param settings_to_add The dictionary to add after a reset and restore of the backed-up key/values
     def backupAndSetup(self, keys_to_backup: List[str], settings_to_add: Dict[str, Any]) -> None:
         saved = {}
-        log.info("Backing up keys (%s)", self.__preferences_file)
+        log.info(f"Backing up keys ({self.__preferences_file})")
         for key in keys_to_backup:
             saved[key] = self.get(key)
 
