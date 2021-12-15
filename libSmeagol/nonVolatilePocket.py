@@ -68,7 +68,7 @@ class NonVolatilePocket(TimerPocket):
 
         self.erase()
 
-        log.info("Restoring settings (%s)", self.__preferences_file)
+        log.info(f"Restoring settings ({self.__preferences_file})")
         for key, value in saved.items():
             self.set(key, value)
 
