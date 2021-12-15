@@ -72,7 +72,7 @@ class NonVolatilePocket(TimerPocket):
         for key, value in saved.items():
             self.set(key, value)
 
-        log.info("Adding extra settings (%s)", self.__preferences_file)
+        log.info(f"Adding extra settings ({self.__preferences_file})")
         for key in settings_to_add.keys():
             self.set(key, settings_to_add[key])
 
