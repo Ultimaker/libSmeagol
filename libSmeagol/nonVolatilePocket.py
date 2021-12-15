@@ -102,7 +102,7 @@ class NonVolatilePocket(TimerPocket):
                 with open(self.__preferences_file, "r") as f:
                     preferences = json.load(f)
             except Exception:  # pylint: disable=broad-except
-                log.warning("Error reading preferences file: '%s'", self.__preferences_file)
+                log.warning(f"Error reading preferences file: {self.__preferences_file}")
                 preferences = dict()
 
         self._setPreferences(preferences)
