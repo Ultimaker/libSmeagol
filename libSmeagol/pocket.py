@@ -108,8 +108,7 @@ class Pocket:
                 return sub_pocket
             else:
                 log.warning(
-                    "Getting key '%s' as pocket for pocket '%s' fails for not being a dictionary but a %s!",
-                    key, self, type(value)
+                    f"Getting key '{key}' as pocket for pocket '{self}' fails for not being a dictionary but: {type(value)}"
                 )
                 # Default behaviour is to return (copy) of the default
                 return None
