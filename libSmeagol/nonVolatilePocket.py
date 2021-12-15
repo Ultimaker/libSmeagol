@@ -49,7 +49,7 @@ class NonVolatilePocket(TimerPocket):
             log.info(f"Wiping all registry keys ({self.__preferences_file})")
             os.remove(self.__preferences_file)
         except OSError:
-            log.exception("Unable to remove settings file (%s)", self.__preferences_file)
+            log.exception(f"Unable to remove settings file: {self.__preferences_file}")
 
         self._setPreferences({})
         if restart_after_erase:
