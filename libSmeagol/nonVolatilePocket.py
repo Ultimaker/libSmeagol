@@ -134,6 +134,6 @@ class NonVolatilePocket(TimerPocket):
                 os.fsync(dir_fd)
                 os.close(dir_fd)
         except Exception:  # pylint: disable=broad-except
-            log.exception("Error writing preferences file '%s'", self.__preferences_file)
+            log.exception(f"Error writing preferences file: {self.__preferences_file}")
 
         os.sync()
