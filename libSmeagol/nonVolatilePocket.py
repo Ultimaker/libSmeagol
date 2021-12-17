@@ -14,15 +14,16 @@ log = logging.getLogger(__name__.split(".")[-1])
 #  When settings are changed (and differ from the current value), they will be saved after a short delay
 class NonVolatilePocket(TimerPocket):
 
-    ## Public
+    ## Default location for file storage
+    __BASE_PATH = "/var/lib/griffin/"
 
     ## Initializes a thread for the registry to handle the automatic saving
     #  @param filename The filename to read/write the preferences (absolute path starts with '/')
     #  @param save_interval The minimal interval between saving of changes, with a default of 5 seconds
-    def __init__(self, filename: str, save_interval: int=5) -> None:
+    def __init__(self, filename: str, save_interval: int = 5) -> None:
         super().__init__(save_interval)
         # Variable needed for naming of thread to be used
-        self.__preferences_file = str(os.path.join(self.__BASE_PATH, filename))
+        self.__preferences_file = os.path.join(self.__BASE_PATH, filename)
         # Load can be called after init (so the registry is initialized)
         self.__load()
         # Start the timer
@@ -42,40 +43,40 @@ class NonVolatilePocket(TimerPocket):
 
     ## Stops the registry and erases all settings (remove file).
     #  @param restart_after_erase If true then the registryfile will be reopened and the thread started again
-    def erase(self, *, restart_after_erase: bool=True) -> None:
+    def erase(self, *, restart_after_erase: bool = True) -> None:
         self.stop()
         try:
-            log.info("Wiping all registry keys...")
+            log.info(f"Wiping all registry keys ({self.__preferences_file})")
             os.remove(self.__preferences_file)
-        except OSError as exception:
-            log.error("Unable to remove settings file '%s', because %s", self.__preferences_file, exception.strerror)
-            pass
+        except OSError:
+            log.exception(f"Unable to remove settings file: {self.__preferences_file}")
+
         self._setPreferences({})
         if restart_after_erase:
             self.__load()
             self._start()
 
-    ## Implements a special function that will erase all settings, except the keys mentioned in the keys_to_save list and add the extra settings at the end
+    ## Implements a special function that will erase all settings,
+    # except the keys mentioned in the keys_to_save list and add the extra settings at the end
     #  @param keys_to_backup The list of keys to backup prior to removing all settings
-    #  @param settings_to_add The dictionary of key/values to add after te reset and restoration of the backed up key/values
+    #  @param settings_to_add The dictionary to add after a reset and restore of the backed-up key/values
     def backupAndSetup(self, keys_to_backup: List[str], settings_to_add: Dict[str, Any]) -> None:
         saved = {}
-        log.info("Backing up keys...")
+        log.info(f"Backing up keys ({self.__preferences_file})")
         for key in keys_to_backup:
             saved[key] = self.get(key)
 
         self.erase()
 
-        log.info("Restoring settings...")
+        log.info(f"Restoring settings ({self.__preferences_file})")
         for key, value in saved.items():
             self.set(key, value)
 
-        log.info("Adding extra settings...")
+        log.info(f"Adding extra settings ({self.__preferences_file})")
         for key in settings_to_add.keys():
             self.set(key, settings_to_add[key])
-        self.forceSave()
 
-    ## Protected
+        self.forceSave()
 
     ## Executes the action to be performed. Protected and must be overridden by derived classes
     def _executeAction(self) -> None:
@@ -85,35 +86,29 @@ class NonVolatilePocket(TimerPocket):
     #  @return Returns a string to identify the kind of registry
     def _getRegistryId(self) -> str:
         basename = os.path.basename(self.__preferences_file)
-        return log.name + ": '" + basename + "'"
+        return f"{log.name}: '{basename}'"
 
     ## Handles an onChangeEvent which happens whenever a new value is added or an existing is changed
     def _handleOnChangeEvent(self) -> None:
         super()._handleOnChangeEvent()
         self._startTimerCheck()
 
-    ## Private
-
-    ## Default location for file storage
-    __BASE_PATH = "/var/lib/griffin/"
-
     ## Loads the settings from the specified file in json format
     def __load(self) -> None:
         preferences = {}  # type: Dict[str, Any]
         if os.path.isfile(self.__preferences_file):
-            log.info("Reading preferences from " + self.__preferences_file)
+            log.info(f"Reading preferences ({self.__preferences_file})")
             try:
                 with open(self.__preferences_file, "r") as f:
                     preferences = json.load(f)
-            except Exception:
-                log.warning("Error reading preferences file " + self.__preferences_file)
+            except Exception:  # pylint: disable=broad-except
+                log.warning(f"Error reading preferences file: {self.__preferences_file}")
                 preferences = dict()
 
         self._setPreferences(preferences)
 
     ## Save the settings store as a json file, including path creation if it does not exist
     def __save(self) -> None:
-        log.info("Saving preferences to " + self.__preferences_file)
         preferences = self.getAll()
         if preferences is None:
             return
@@ -122,19 +117,23 @@ class NonVolatilePocket(TimerPocket):
         try:
             if not os.path.exists(directory):
                 os.makedirs(directory)
+
             # First write the preference file to a new file on disk before we replace the old file.
-            temp_filename = "%s.new" % (self.__preferences_file)
+            temp_filename = f"{self.__preferences_file}.new"
             with open(temp_filename, "w") as f:
                 json.dump(preferences, f, indent=4, sort_keys=True)
                 # Flush the file to disk, and fsync it so it is written to the filesystem.
                 f.flush()
                 os.fsync(f.fileno())
-            # use os.replace to replace the old preference file with the new file. This is an atomic operation.
-            os.replace(temp_filename, self.__preferences_file)
+
+            os.rename(temp_filename, self.__preferences_file)
+
             # Open the directory containing the preference file, and fsync it. This forces the rename to disk.
             if hasattr(os, "O_DIRECTORY"):
                 dir_fd = os.open(directory, os.O_DIRECTORY | os.O_RDONLY)
                 os.fsync(dir_fd)
                 os.close(dir_fd)
-        except Exception:
-            log.exception("Error writing preferences " + self.__preferences_file)
+        except Exception:  # pylint: disable=broad-except
+            log.exception(f"Error writing preferences file: {self.__preferences_file}")
+
+        os.sync()
