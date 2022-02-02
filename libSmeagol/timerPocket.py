@@ -2,7 +2,7 @@ import time
 import logging
 import atexit
 
-from threading import Thread
+from threading import Event, Thread
 from typing import Optional
 
 from libSmeagol.pocket import Pocket
@@ -26,6 +26,7 @@ class TimerPocket(Pocket):
         self.__last_timer_check = None  # type: Optional[float]
         self.__running = False
         self.__thread = None  # type: Optional[Thread]
+        self.__thread_finished_event = Event()
 
         # At exit, last call to action handler
         atexit.register(self.__callExecuteAction)
@@ -33,6 +34,7 @@ class TimerPocket(Pocket):
     ## Stops the thread from running, but does not stop the thread itself
     def stop(self) -> None:
         self.__running = False
+        self.__thread_finished_event.wait()
 
     ## Protected
 
@@ -53,9 +55,7 @@ class TimerPocket(Pocket):
     ## (Re)starts the thread
     def _start(self) -> None:
         self.__clearLastTimerCheck()
-        self.__running = True
-        assert self.__thread is not None
-        self.__thread.start()
+        self._startTimerThread()
 
     ## Creates and starts the timer thread and sets the initial timer check as well
     def _startTimerThread(self) -> None:
@@ -88,12 +88,15 @@ class TimerPocket(Pocket):
     ## During the existence of the instance, the running thread will be calling this function.
     # Preferably this should be a private function, but as it is used as a callback, it needs to be public
     def __run(self) -> None:
-        while self.__running:
-            time.sleep(self.__SLEEP_INTERVAL)
-            if self.__last_timer_check is not None:
-                now = time.monotonic()
-                last_timer_check = self.__last_timer_check + self.__timer_interval
-                if last_timer_check < now:
-                    self.__callExecuteAction()
-                else:
-                    time.sleep(last_timer_check - now)
+        try:
+            while self.__running:
+                time.sleep(self.__SLEEP_INTERVAL)
+                if self.__last_timer_check is not None:
+                    now = time.monotonic()
+                    last_timer_check = self.__last_timer_check + self.__timer_interval
+                    if last_timer_check < now:
+                        self.__callExecuteAction()
+                    else:
+                        time.sleep(last_timer_check - now)
+        finally:
+            self.__thread_finished_event.set()
