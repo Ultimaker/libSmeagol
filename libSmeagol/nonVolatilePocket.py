@@ -27,7 +27,7 @@ class NonVolatilePocket(TimerPocket):
         # Load can be called after init (so the registry is initialized)
         self.__load()
         # Start the timer
-        self._startTimerThread()
+        self._start()
 
     ## Gets the filename, including the new path
     #  @return The fully qualified filename
