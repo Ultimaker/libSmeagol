@@ -26,7 +26,7 @@ class Pocket:
         elif isinstance(preferences, Pocket):
             log.info("Accessing the preferences dictionary: %r", preferences.__preferences)
             self.__preferences = copy.deepcopy(preferences.__preferences)
-            assert isinstance(preferences, dict)
+            assert isinstance(self.__preferences, dict)
         else:
             self.__preferences = preferences
 

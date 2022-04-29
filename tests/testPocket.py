@@ -31,6 +31,20 @@ def test_unknown_key():
     assert value == default_value
 
 
+def test_init_with_pocket():
+    """We can initialize a Pocket with another Pocket, in which case it should create an
+    independent deepcopy of the original"""
+
+    orig_pocket = Pocket({"int": 101, "float": 13.501, "bool": False, "string": "test_case"})
+    new_pocket = Pocket(orig_pocket)
+
+    orig_pocket.set("int", 99)
+    assert new_pocket.get("int") == 101
+
+    new_pocket.set("string", "new_case")
+    assert orig_pocket.get("string") == "test_case"
+
+
 def test_getAsString():
     """Test getAsString conversions"""
     # Arrange
