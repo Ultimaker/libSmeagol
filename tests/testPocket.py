@@ -1,18 +1,8 @@
-import json
-import time
-
 from typing import Any
 
 import pytest
 
-from libSmeagol import NonVolatilePocket, Pocket
-
-
-def _load_settings_from_pocket_file(pocket: NonVolatilePocket) -> Any:
-    """Load the JSON file created by the Pocket and return the contents as a dictionary"""
-    print("Loading file " + pocket.getFilename())
-    with open(pocket.getFilename(), "r") as f:
-        return json.load(f)
+from libSmeagol import Pocket
 
 
 def _update_pocket(pocket: Pocket, settings: dict) -> None:
@@ -27,26 +17,12 @@ def _update_pocket(pocket: Pocket, settings: dict) -> None:
         pocket.set(key, value)
 
 
-def test_save_preference(pocket: NonVolatilePocket):
-    """Simple set value / wait for save / verify save test (implies get/set test)"""
-    # Arrange
-    key = "TestKey"
-    value = "dummy_value"
-
-    # Act
-    pocket.setAsString(key, value)
-    time.sleep(4)
-    settings = _load_settings_from_pocket_file(pocket)
-
-    # Assert
-    assert value == settings[key]
-
-
-def test_unknown_key(pocket: NonVolatilePocket):
+def test_unknown_key():
     """Test unknown key with default value"""
     # Arrange
     key = "KeyDoesNotExist"
     default_value = "the_default_value"
+    pocket = Pocket()
 
     # Act
     value = pocket.get(key, default_value)
@@ -55,11 +31,12 @@ def test_unknown_key(pocket: NonVolatilePocket):
     assert value == default_value
 
 
-def test_getAsString(pocket: NonVolatilePocket):
+def test_getAsString():
     """Test getAsString conversions"""
     # Arrange
     settings = {"int": 101, "float": 13.501, "bool": True, "string": "test_case"}
     expected = {"int": "101", "float": "13.501", "bool": "True", "string": "test_case"}
+    pocket = Pocket()
 
     # Act
     _update_pocket(pocket, settings)
@@ -70,11 +47,12 @@ def test_getAsString(pocket: NonVolatilePocket):
         assert value == actual_value
 
 
-def test_setAsString(pocket: NonVolatilePocket):
+def test_setAsString():
     """Test setAsString conversions"""
     # Arrange
     settings = {"int": 101, "float": 13.501, "bool": True, "string": "test_case"}
     expected = {"int": "101", "float": "13.501", "bool": "True", "string": "test_case"}
+    pocket = Pocket()
 
     # Act
     for key, value in settings.items():
@@ -86,11 +64,42 @@ def test_setAsString(pocket: NonVolatilePocket):
         assert value == actual_value
 
 
-def test_getAsBoolean(pocket: NonVolatilePocket):
+def test_getAsBoolean():
     """Test getAsBoolean conversions"""
     # Arrange
-    settings = {"int_zero": 0, "int_not_zero": 1, "int_positive": 1, "float": 13.501, "bool_true": True, "bool_false": False, "string_yes": "yes", "string_true": "true", "string_no": "no", "string_false": "false", "string_1": "1", "string_0": "0", "float_0": "0.00", "float_not_zero": "13.37"}
-    expected = {"int_zero": False, "int_not_zero": True, "int_positive": True, "float": True, "bool_true": True, "bool_false": False, "string_yes": True, "string_true": True, "string_no": False, "string_false": False, "string_1": True, "string_0": False, "float_0": False, "float_not_zero": True}
+    settings = {
+        "int_zero": 0,
+        "int_not_zero": 1,
+        "int_positive": 1,
+        "float": 13.501,
+        "bool_true": True,
+        "bool_false": False,
+        "string_yes": "yes",
+        "string_true": "true",
+        "string_no": "no",
+        "string_false": "false",
+        "string_1": "1",
+        "string_0": "0",
+        "float_0": "0.00",
+        "float_not_zero": "13.37",
+    }
+    expected = {
+        "int_zero": False,
+        "int_not_zero": True,
+        "int_positive": True,
+        "float": True,
+        "bool_true": True,
+        "bool_false": False,
+        "string_yes": True,
+        "string_true": True,
+        "string_no": False,
+        "string_false": False,
+        "string_1": True,
+        "string_0": False,
+        "float_0": False,
+        "float_not_zero": True,
+    }
+    pocket = Pocket()
 
     # Act
     _update_pocket(pocket, settings)
@@ -101,11 +110,12 @@ def test_getAsBoolean(pocket: NonVolatilePocket):
         assert value == actual_value
 
 
-def test_setAsBoolean(pocket: NonVolatilePocket):
+def test_setAsBoolean():
     """Test setAsBoolean conversions"""
     # Arrange
     settings = {"int_zero": 0, "int_not_zero": 1, "int_positive": 1, "float": 13.501, "bool_true": True, "bool_false": False, "string_yes": "yes", "string_true": "true", "string_no": "no", "string_false": "false", "string_1": "1", "string_0": "0", "float_0": "0.00", "float_not_zero": "13.37"}
     expected = {"int_zero": False, "int_not_zero": True, "int_positive": True, "float": True, "bool_true": True, "bool_false": False, "string_yes": True, "string_true": True, "string_no": False, "string_false": False, "string_1": True, "string_0": False, "float_0": False, "float_not_zero": True}
+    pocket = Pocket()
 
     # Act
     for key, value in settings.items():
@@ -117,11 +127,12 @@ def test_setAsBoolean(pocket: NonVolatilePocket):
         assert value == actual_value
 
 
-def test_unable_conversions(pocket: NonVolatilePocket):
+def test_unable_conversions():
     """Test some unable conversions (from string to int and vv)"""
     # Arrange
     settings = {"not_a_number": "nan", "not_numeric": "abc"}
     expected = {"not_a_number": None, "not_numeric": None}
+    pocket = Pocket()
 
     # Act
     for key, value in settings.items():
@@ -138,9 +149,9 @@ def test_setAsPocket():
     # Arrange
     settings = {"int": 101, "float": 13.501, "bool": True, "string": "test_case"}
     key = "test_reg"
+    pocket = Pocket()
 
     # Act
-    pocket = Pocket()
     sub_pocket = Pocket(settings)
     pocket.setAsSubPocket(key, sub_pocket)
 
@@ -154,9 +165,9 @@ def test_getAsPocket():
     # Arrange
     settings = {"int": 101, "float": 13.501, "bool": True, "string": "test_case"}
     key = "test_reg"
+    pocket = Pocket()
 
     # Act
-    pocket = Pocket()
     pocket.set(key, settings)
 
     # Assert
@@ -178,9 +189,9 @@ def test_getAsSubPocket_from_boolean():
     setting = True
     key = "test_get_boolean_pocket"
     expected = None
+    pocket = Pocket()
 
     # Act
-    pocket = Pocket()
     pocket.set(key, setting)
 
     # Assert
@@ -193,9 +204,9 @@ def test_geeting_pocket_from_unknown_key():
     # Arrange
     key = "test_bogus_pocket"
     expected = {}
+    pocket = Pocket()
 
     # Act
-    pocket = Pocket()
     value = pocket.getAsSubPocket(key)
 
     # Assert
@@ -203,11 +214,12 @@ def test_geeting_pocket_from_unknown_key():
     assert expected == value.getAll()
 
 
-def test_setAsList(pocket: NonVolatilePocket):
+def test_setAsList():
     """Test setting a list"""
     # Arrange
     settings = ["aap", "noot", "mies"]
     key = "list_set_key"
+    pocket = Pocket()
 
     # Act
     pocket.setAsList(key, settings)
@@ -218,11 +230,12 @@ def test_setAsList(pocket: NonVolatilePocket):
     assert settings == value
 
 
-def test_getAsList(pocket: NonVolatilePocket):
+def test_getAsList():
     """Test getting a list"""
     # Arrange
     settings = [ "aap", "noot", "mies" ]
     key = "list_get_key"
+    pocket = Pocket()
 
     # Act
     pocket.set(key, settings)
@@ -258,16 +271,16 @@ def test_getting_list_from_unknown_key():
     # Arrange
     key = "test_bogus_list"
     expected = None
+    pocket = Pocket()
 
     # Act
-    pocket = Pocket()
     value = pocket.getAsList(key)
 
     # Assert
     assert expected == value
 
 
-def testNestedPocket(pocket: NonVolatilePocket):
+def test_nested_pocket():
     """Test nested pocket"""
     # Arrange
     settings = {
@@ -285,6 +298,7 @@ def testNestedPocket(pocket: NonVolatilePocket):
        }
    }
     key = "head"
+    pocket = Pocket()
     pocket.set(key, settings)
 
     # Act
