@@ -1,7 +1,6 @@
 import logging
 import copy
 import threading
-import re
 from typing import Optional, Dict, Union, Any, List, Tuple, Type
 
 from libSmeagol.signal import Signal
@@ -31,7 +30,6 @@ class Pocket:
             self.__preferences = preferences
 
         self.__lock = threading.RLock()
-        self.__decimal_number_pattern = re.compile(self.__DECIMAL_NUMBER_EXPRESSION)
         self.__on_changed = Signal(name="Pocket.__on_changed")
 
     ## Check if a key exists in this registry.
@@ -222,9 +220,6 @@ class Pocket:
 
     ## Private
 
-    ## The regular expression to validate floating point numbers
-    __DECIMAL_NUMBER_EXPRESSION = r"^-?\d+(,\d+)*(\.\d+(e\d+)?)?$"
-
     ## Gets the setting as the specified type. If the cast fails, the default value is returned.
     #  @param key The setting
     #  @param default The default value to return
@@ -255,14 +250,15 @@ class Pocket:
     #  @return Returns the value as the new type or the default value in case of failure
     def __castSafe(self, value: Any, to_type: Type, default: Any = None) -> Any:
         try:
-            if (type(bool()) == to_type) and (type(str()) == type(value)):
+            if to_type is bool and isinstance(value, str):
                 string_value = value.lower()
                 if string_value in {"no", "false", "0"}:
                     return False
-                if self.__decimal_number_pattern.match(value):
-                    return int(self.__castSafe(value, float)) != 0
-                else:
-                    return True
+                try:
+                    return float(value) != 0
+                except (TypeError, ValueError):
+                    pass
+                return True
             return to_type(value)
         except ValueError:
             log.warning("Cannot cast %s to type %s", value, to_type)

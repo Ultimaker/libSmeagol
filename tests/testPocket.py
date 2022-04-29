@@ -62,6 +62,7 @@ def test_getSetAsString(name, value, expected):
     ("string_0", "0", False),
     ("string_float_0", "0.00", False),
     ("string_float_1", "13.5e-3", True),
+    ("string_float_2", "0.00e-10", False),
     ("string_float_not_zero", "13.37", True),
 ])
 def test_setGetAsBoolean(name, value, expected):
