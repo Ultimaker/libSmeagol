@@ -1,5 +1,3 @@
-from typing import Any
-
 import pytest
 
 from libSmeagol import Pocket
@@ -23,28 +21,33 @@ def test_unknown_key():
     """Test unknown key with default value"""
     pocket = Pocket()
 
+    assert not pocket.has("UnknownKey")
+
     value = pocket.get("UnknownKey", "DefaultValue")
     assert value == "DefaultValue"
 
 
-@pytest.mark.parametrize("name,value,expected", [
-    ("int", 101, "101"),
-    ("float", 13.501, "13.501"),
-    ("bool", True, "True"),
-    ("string", "test_case", "test_case"),
-])
-def test_getSetAsString(name, value, expected):
-    """Test getAsString conversions"""
-
-    # getAsString forces the set value to be read out as a string:
+def test_simple_get_set_has():
+    """Basic get/set functionality"""
     pocket = Pocket()
-    pocket.set(name, value)
-    assert pocket.getAsString(name) == expected
 
-    # Conversely, setAsString forces the value to be stored as a string:
-    pocket = Pocket()
-    pocket.setAsString(name, value)
-    assert pocket.get(name) == expected
+    pocket.set("value", 42)
+    assert pocket.has("value")
+    assert pocket.get("value") == 42
+
+
+def test_delete():
+    """Test deletion of keys"""
+    pocket = Pocket({"int": 42, "foo": "bar", "float": 3.14})
+
+    assert pocket.has("foo")
+
+    # After deletion, the value is gone:
+    pocket.delete("foo")
+
+    assert not pocket.has("foo")
+    assert "foo" not in pocket.getAll()
+    assert pocket.get("foo") is None
 
 
 @pytest.mark.parametrize("name,value,expected", [
@@ -76,6 +79,65 @@ def test_setGetAsBoolean(name, value, expected):
     # Conversely, setAsBoolean forces the value to be stored as a boolean:
     pocket = Pocket()
     pocket.setAsBoolean(name, value)
+    assert pocket.get(name) == expected
+
+
+@pytest.mark.parametrize("name,value,expected", [
+    ("float", 103.5, 103.5),
+    ("int", 101, 101.),
+    ("string", "103.5", 103.5),
+    ("string_2", "-103.5e-3", -103.5e-3),
+])
+def test_getSetAsFloat(name, value, expected):
+    """Test getAsFloat/setAsFloat conversions"""
+
+    # getAsFloat forces the set value to be read out as a float:
+    pocket = Pocket()
+    pocket.set(name, value)
+    assert pocket.getAsFloat(name) == expected
+
+    # Conversely, setAsFloat forces the value to be stored as a float:
+    pocket = Pocket()
+    pocket.setAsFloat(name, value)
+    assert pocket.get(name) == expected
+
+
+@pytest.mark.parametrize("name,value,expected", [
+    ("int", 101, 101),
+    ("string", "101", 101),
+    ("float", 103.5, 103),
+])
+def test_getSetAsInt(name, value, expected):
+    """Test getAsInt/setAsInt conversions"""
+
+    # getAsInt forces the set value to be read out as integer:
+    pocket = Pocket()
+    pocket.set(name, value)
+    assert pocket.getAsInt(name) == expected
+
+    # Conversely, setAsInt forces the value to be stored as an integer:
+    pocket = Pocket()
+    pocket.setAsInt(name, value)
+    assert pocket.get(name) == expected
+
+
+@pytest.mark.parametrize("name,value,expected", [
+    ("int", 101, "101"),
+    ("float", 13.501, "13.501"),
+    ("bool", True, "True"),
+    ("string", "test_case", "test_case"),
+])
+def test_getSetAsString(name, value, expected):
+    """Test getAsString conversions"""
+
+    # getAsString forces the set value to be read out as a string:
+    pocket = Pocket()
+    pocket.set(name, value)
+    assert pocket.getAsString(name) == expected
+
+    # Conversely, setAsString forces the value to be stored as a string:
+    pocket = Pocket()
+    pocket.setAsString(name, value)
     assert pocket.get(name) == expected
 
 
@@ -153,6 +215,21 @@ def test_getSetAsList():
 
     # Calling getAsList on an unknown key also gives us None
     assert pocket.getAsList("unknown_key") is None
+
+
+def test_getValuesFromKeysAsTuple():
+    """Test reading multiple keys at once"""
+
+    pocket = Pocket({"int": 42, "foo": "bar", "float": 3.14})
+
+    # We can read multiple values at once, as a tuple:
+    my_tuple = pocket.getValuesFromKeysAsTuple(["int", "float"])
+    assert isinstance(my_tuple, tuple)
+    assert my_tuple == (42, 3.14)
+
+    # Unknown keys are read as `None`
+    my_tuple = pocket.getValuesFromKeysAsTuple(["unknown", "float", "foo"])
+    assert my_tuple == (None, 3.14, "bar")
 
 
 def test_nested_pocket():
