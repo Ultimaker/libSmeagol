@@ -1,10 +1,11 @@
 import json
-from typing import Any, Callable, Optional
+from pathlib import Path
+from time import sleep
+from typing import Any, Callable, Union
 
 import pytest
 
 from libSmeagol import Pocket, NonVolatilePocket
-
 
 DEFAULT_SAVE_INTERVAL = 2
 
@@ -32,11 +33,19 @@ def pocket(make_pocket) -> NonVolatilePocket:
     return make_pocket()
 
 
-def _load_settings_from_pocket_file(pocket: NonVolatilePocket) -> Any:
-    """Load the JSON file created by the Pocket and return the contents as a dictionary"""
-    print("Loading file " + pocket.getFilename())
-    with open(pocket.getFilename(), "r") as f:
-        return json.load(f)
+def _load_settings_from_pocket_file(pocket_or_path: Union[NonVolatilePocket, Path], default=None) -> Any:
+    """Load the JSON file created by a Pocket and return the contents as a dictionary"""
+    try:
+        if isinstance(pocket_or_path, NonVolatilePocket):
+            filename = Path(pocket_or_path.getFilename())
+        else:
+            filename = pocket_or_path
+        with open(filename, "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        if default is not None:
+            return default
+        raise
 
 
 def test_save_load(pocket: NonVolatilePocket):
@@ -98,6 +107,34 @@ def test_erase(pocket):
 
 
 @pytest.mark.slow
+def test_erase_timing(make_pocket):
+    """In old libSmeagol versions, the change monitoring thread  in TimerPocket could keep running
+    after a call to stop(). This could create a race condition, where the storage file on disk
+    would re-appear after a call to `erase()`. This test checks specifically for that race condition.
+    See https://github.com/Ultimaker/libSmeagol/commit/407a9dc8e9792a4e5cdc94b4271903797837685e
+    for the commit that fixes this issue.
+    """
+
+    # We create a NonVolatilePocket that only saves data once per two seconds:
+    pocket: NonVolatilePocket = make_pocket(save_interval=2)
+    pocket_file = Path(pocket.getFilename())
+
+    # Set some values.
+    pocket.setAsInt("my_int", 42)
+    pocket.setAsString("foo", "bar")
+    pocket.setAsSubPocket("sub_pocket", Pocket({"my_float": 3.14, "bar": "baz"}))
+
+    # Erase the Pocket; don't restart the change monitoring thread.
+    sleep(2.2)
+    pocket.erase(restart_after_erase=False)
+
+    # The Pocket data file on disk should *not* come back.
+    for i in range(3):
+        assert not pocket_file.is_file()
+        sleep(1)
+
+
+@pytest.mark.slow
 def test_backup_and_setup(make_pocket):
     """A NonVolatilePocket can be reset, while preserving/forcing a subset of data"""
 
@@ -129,3 +166,138 @@ def test_backup_and_setup(make_pocket):
         "my_string_overwritten": "Giraffe",
         # ...and other data was removed!
     }
+
+
+@pytest.mark.slow
+def test_erase_no_restart(make_pocket):
+    """A NonVolatilePocket can be erased without restarting the monitor/change/save timer"""
+
+    # We create a NonVolatilePocket that only saves data once per 2 seconds:
+    pocket: NonVolatilePocket = make_pocket(save_interval=2)
+
+    # Fill the Pocket with some data:
+    pocket.setAsInt("my_int", 42)
+    pocket.setAsString("my_string", "FooBar")
+    pocket.setAsSubPocket("sub_pocket", Pocket({"my_float": 3.14, "foo": "bar"}))
+
+    # Wait for > 2 seconds, and the data should have been flushed to disk
+    sleep(4)
+    assert _load_settings_from_pocket_file(pocket) == {
+        "my_int": 42,
+        "my_string": "FooBar",
+        "sub_pocket": {"my_float": 3.14, "foo": "bar"},
+    }
+
+    # Wipe the pocket, but do *not* restart the change monitoring thread.
+    pocket.erase(restart_after_erase=False)
+
+    # Modify the Pocket, and nothing should happen.
+    pocket.setAsInt("my_int", 10)
+    sub_pocket = pocket.getAsSubPocket("sub_pocket")
+    sub_pocket.setAsFloat("my_float", 2.718)
+
+    sleep(4)
+    assert _load_settings_from_pocket_file(pocket, {}) == {}
+
+
+@pytest.mark.slow
+def test_save_rate_limit(make_pocket):
+    """A NonVolatilePocket saves data only once per X seconds (not on every change)"""
+
+    # We create a NonVolatilePocket that only saves data once per 2 seconds:
+    pocket: NonVolatilePocket = make_pocket(save_interval=2)
+
+    # Make sure the underlying JSON file has been created (just storing {} for now):
+    pocket.forceSave()
+
+    # Write some data; this should *not* be written to the file yet.
+    pocket.setAsInt("my_int", 42)
+    assert _load_settings_from_pocket_file(pocket) == {}
+    pocket.setAsString("foo", "bar")
+    assert _load_settings_from_pocket_file(pocket) == {}
+
+    # After one more second, we should still not see any data being written.
+    sleep(1)
+    assert _load_settings_from_pocket_file(pocket) == {}
+
+    # .. but the data is present in memory!
+    assert pocket.getAll() == {"my_int": 42, "foo": "bar"}
+
+    # After > 3 seconds, we should finally see that data land in the file.
+    sleep(4)
+    assert _load_settings_from_pocket_file(pocket) == {"my_int": 42, "foo": "bar"}
+
+    # The file should not be modified again if the data hasn't changed.
+    pocket_file = Path(pocket.getFilename())
+    mtime_0 = pocket_file.stat().st_mtime
+    sleep(4)
+    assert pocket_file.stat().st_mtime == mtime_0
+
+
+@pytest.mark.slow
+def test_save_subpocket(make_pocket):
+    """Saving a SubPocket should trigger the parent to save data to disk"""
+
+    # We create a NonVolatilePocket that only saves data once per 2 seconds:
+    pocket: NonVolatilePocket = make_pocket(save_interval=2)
+
+    # Set some values.
+    pocket.setAsInt("my_int", 42)
+    pocket.setAsString("foo", "bar")
+    pocket.setAsSubPocket("sub_pocket", Pocket({"my_float": 3.14, "bar": "baz"}))
+
+    # Wait until the data has been written to disk, after the "save interval".
+    sleep(4)
+
+    # Modify the SubPocket.
+    # FIXME This only works if we use `getAsSubPocket` to explicitly wrap the
+    #       nested dict in a new `Pocket` object. This is likely a bug.
+    sub_pocket = pocket.getAsSubPocket("sub_pocket")
+    sub_pocket.set("my_float", 2.718)
+    assert _load_settings_from_pocket_file(pocket)["sub_pocket"]["my_float"] == 3.14
+
+    # After waiting another save interval, the data should be written to disk.
+    sleep(4)
+    assert _load_settings_from_pocket_file(pocket)["sub_pocket"]["my_float"] == 2.718
+
+
+def test_save_upon_exit(make_pocket):
+    """When a Pocket gets destroyed, it should first write its data to disk"""
+
+    # We start with an empty NonVolatilePocket:
+    pocket: NonVolatilePocket = make_pocket()
+    pocket.forceSave()
+
+    pocket_file = Path(pocket.getFilename())
+    assert _load_settings_from_pocket_file(pocket_file) == {}
+
+    # We then make some modifications:
+    pocket.setAsInt("my_int", 42)
+    pocket.setAsString("foo", "bar")
+
+    # FIXME NonVolatilePocket only triggers a save using the `atexit` module. So to test that
+    #       behavior, we have to reach into the innards of `atexit`. Not nice!
+    #       Really, NonVolatilePocket should implement more robust cleanup behavior.
+    import atexit
+    atexit._run_exitfuncs()
+
+    assert _load_settings_from_pocket_file(pocket_file) == {"my_int": 42, "foo": "bar"}
+
+
+@pytest.mark.xfail
+def test_save_upon_destruction(make_pocket):
+    """When a Pocket gets destroyed, it should first write its data to disk"""
+
+    pocket: NonVolatilePocket = make_pocket()
+    pocket.forceSave()
+    pocket_file = Path(pocket.getFilename())
+    assert _load_settings_from_pocket_file(pocket_file) == {}
+
+    pocket.setAsInt("my_int", 42)
+    pocket.setAsString("foo", "bar")
+
+    # Delete the Pocket: it should write the data to disk first.
+    del pocket
+
+    # FIXME ... it doesn't
+    assert _load_settings_from_pocket_file(pocket_file) == {"my_int": 42, "foo": "bar"}
