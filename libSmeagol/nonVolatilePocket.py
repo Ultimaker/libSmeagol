@@ -115,8 +115,7 @@ class NonVolatilePocket(TimerPocket):
 
         directory = os.path.dirname(self.__preferences_file)
         try:
-            if not os.path.exists(directory):
-                os.makedirs(directory)
+            os.makedirs(directory, exist_ok=True)
 
             # First write the preference file to a new file on disk before we replace the old file.
             temp_filename = f"{self.__preferences_file}.new"
@@ -131,8 +130,10 @@ class NonVolatilePocket(TimerPocket):
             # Open the directory containing the preference file, and fsync it. This forces the rename to disk.
             if hasattr(os, "O_DIRECTORY"):
                 dir_fd = os.open(directory, os.O_DIRECTORY | os.O_RDONLY)
-                os.fsync(dir_fd)
-                os.close(dir_fd)
+                try:
+                    os.fsync(dir_fd)
+                finally:
+                    os.close(dir_fd)
         except Exception:  # pylint: disable=broad-except
             log.exception(f"Error writing preferences file: {self.__preferences_file}")
 
