@@ -26,8 +26,10 @@ class Pocket:
             log.info("Accessing the preferences dictionary: %r", preferences.__preferences)
             self.__preferences = copy.deepcopy(preferences.__preferences)
             assert isinstance(self.__preferences, dict)
-        else:
+        elif isinstance(preferences, dict):
             self.__preferences = preferences
+        else:
+            raise TypeError("Can only initialize a Pocket with a dict or Pocket")
 
         self.__lock = threading.RLock()
         self.__on_changed = Signal(name="Pocket.__on_changed")

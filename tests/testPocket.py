@@ -3,6 +3,23 @@ import pytest
 from libSmeagol import Pocket
 
 
+def test_init():
+
+    # We can initialize an empty Pocket:
+    pocket = Pocket()
+    assert pocket.getAll() == {}
+
+    # We can also pass in a dict to be used:
+    pocket = Pocket({"int": 42, "foo": "bar"})
+    assert pocket.get("foo") == "bar"
+
+    # Passing in a non-dict creates an error:
+    with pytest.raises(TypeError):
+        pocket = Pocket("a_string")
+        pocket = Pocket(3.14)
+        pocket = Pocket((1, 2))
+
+
 def test_init_with_pocket():
     """We can initialize a Pocket with another Pocket, in which case it should create an
     independent deepcopy of the original"""
