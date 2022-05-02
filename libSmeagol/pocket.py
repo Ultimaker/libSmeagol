@@ -254,7 +254,7 @@ class Pocket:
         try:
             if to_type is bool and isinstance(value, str):
                 string_value = value.lower()
-                if string_value in {"no", "false", "0"}:
+                if string_value in {"no", "false", "0", ""}:
                     return False
                 try:
                     return float(value) != 0

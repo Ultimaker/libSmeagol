@@ -80,6 +80,7 @@ def test_delete():
     ("string_false", "false", False),
     ("string_1", "1", True),
     ("string_0", "0", False),
+    ("empty_string", "", False),
     ("string_float_0", "0.00", False),
     ("string_float_1", "13.5e-3", True),
     ("string_float_2", "0.00e-10", False),
