@@ -69,6 +69,7 @@ def test_save_load(pocket: NonVolatilePocket):
     assert sub_pocket.getAll() == {"my_float": 3.14, "baz": "bam"}
 
 
+@pytest.mark.slow
 def test_erase(pocket):
     """A NonVolatilePocket can be reset to an empty dict"""
 
@@ -96,6 +97,7 @@ def test_erase(pocket):
     assert not pocket.has("sub_pocket")
 
 
+@pytest.mark.slow
 def test_backup_and_setup(make_pocket):
     """A NonVolatilePocket can be reset, while preserving/forcing a subset of data"""
 
