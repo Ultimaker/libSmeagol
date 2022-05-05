@@ -10,27 +10,12 @@ from libSmeagol import Pocket, NonVolatilePocket
 DEFAULT_SAVE_INTERVAL = 2
 
 
-@pytest.fixture()
-def make_pocket(tmp_path_factory: pytest.TempPathFactory) -> Callable[[], NonVolatilePocket]:
-    """Fixture for creating a new NonVolatilePocket, backed by a new temp file"""
-
-    def _make_pocket(save_interval: int = DEFAULT_SAVE_INTERVAL) -> NonVolatilePocket:
-        """Make a NonVolatilePocket, backed by a fresh temp file
-
-        Args:
-            save_interval: see NonVolatilePocket()
-        """
-        pocket_file = tmp_path_factory.mktemp('nvp') / "testpocket.json"
-        print(f"NonVolatilePocket at {pocket_file}")
-        pocket = NonVolatilePocket(str(pocket_file), save_interval=save_interval)
-        return pocket
-
-    return _make_pocket
-
-
 @pytest.fixture(scope='function')
-def pocket(make_pocket) -> NonVolatilePocket:
-    return make_pocket()
+def pocket(tmp_path) -> NonVolatilePocket:
+    pocket_file = tmp_path / "precious.json"
+    print(f"NonVolatilePocket at {pocket_file}")
+    pocket = NonVolatilePocket(str(pocket_file), save_interval=DEFAULT_SAVE_INTERVAL)
+    return pocket
 
 
 def _load_settings_from_pocket_file(pocket_or_path: Union[NonVolatilePocket, Path], default=None) -> Any:
@@ -107,7 +92,7 @@ def test_erase(pocket):
 
 
 @pytest.mark.slow
-def test_erase_timing(make_pocket):
+def test_erase_timing(pocket):
     """In old libSmeagol versions, the change monitoring thread  in TimerPocket could keep running
     after a call to stop(). This could create a race condition, where the storage file on disk
     would re-appear after a call to `erase()`. This test checks specifically for that race condition.
@@ -116,7 +101,6 @@ def test_erase_timing(make_pocket):
     """
 
     # We create a NonVolatilePocket that only saves data once per two seconds:
-    pocket: NonVolatilePocket = make_pocket(save_interval=2)
     pocket_file = Path(pocket.getFilename())
 
     # Set some values.
@@ -135,10 +119,8 @@ def test_erase_timing(make_pocket):
 
 
 @pytest.mark.slow
-def test_backup_and_setup(make_pocket):
+def test_backup_and_setup(pocket):
     """A NonVolatilePocket can be reset, while preserving/forcing a subset of data"""
-
-    pocket: NonVolatilePocket = make_pocket(save_interval=1)
 
     pocket.setAsInt("my_int", 42)
     pocket.setAsInt("my_int_preserved", 43)
@@ -169,11 +151,8 @@ def test_backup_and_setup(make_pocket):
 
 
 @pytest.mark.slow
-def test_erase_no_restart(make_pocket):
+def test_erase_no_restart(pocket):
     """A NonVolatilePocket can be erased without restarting the monitor/change/save timer"""
-
-    # We create a NonVolatilePocket that only saves data once per 2 seconds:
-    pocket: NonVolatilePocket = make_pocket(save_interval=2)
 
     # Fill the Pocket with some data:
     pocket.setAsInt("my_int", 42)
@@ -201,11 +180,8 @@ def test_erase_no_restart(make_pocket):
 
 
 @pytest.mark.slow
-def test_save_rate_limit(make_pocket):
+def test_save_rate_limit(pocket):
     """A NonVolatilePocket saves data only once per X seconds (not on every change)"""
-
-    # We create a NonVolatilePocket that only saves data once per 2 seconds:
-    pocket: NonVolatilePocket = make_pocket(save_interval=2)
 
     # Make sure the underlying JSON file has been created (just storing {} for now):
     pocket.forceSave()
@@ -235,11 +211,8 @@ def test_save_rate_limit(make_pocket):
 
 
 @pytest.mark.slow
-def test_save_subpocket(make_pocket):
+def test_save_subpocket(pocket):
     """Saving a SubPocket should trigger the parent to save data to disk"""
-
-    # We create a NonVolatilePocket that only saves data once per 2 seconds:
-    pocket: NonVolatilePocket = make_pocket(save_interval=2)
 
     # Set some values.
     pocket.setAsInt("my_int", 42)
@@ -261,11 +234,10 @@ def test_save_subpocket(make_pocket):
     assert _load_settings_from_pocket_file(pocket)["sub_pocket"]["my_float"] == 2.718
 
 
-def test_save_upon_exit(make_pocket):
+def test_save_upon_exit(pocket):
     """When a Pocket gets destroyed, it should first write its data to disk"""
 
-    # We start with an empty NonVolatilePocket:
-    pocket: NonVolatilePocket = make_pocket()
+    # We start with an empty NonVolatilePocket that's saved to disk:
     pocket.forceSave()
 
     pocket_file = Path(pocket.getFilename())
@@ -285,10 +257,10 @@ def test_save_upon_exit(make_pocket):
 
 
 @pytest.mark.xfail
-def test_save_upon_destruction(make_pocket):
+def test_save_upon_destruction(pocket):
     """When a Pocket gets destroyed, it should first write its data to disk"""
 
-    pocket: NonVolatilePocket = make_pocket()
+    # We start with an empty NonVolatilePocket that's saved to disk:
     pocket.forceSave()
     pocket_file = Path(pocket.getFilename())
     assert _load_settings_from_pocket_file(pocket_file) == {}
