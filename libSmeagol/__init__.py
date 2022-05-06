@@ -1,3 +1,3 @@
 from .nonVolatilePocket import NonVolatilePocket
 from .pocket import Pocket
-from .signal import Signal
+from .util.signal import Signal

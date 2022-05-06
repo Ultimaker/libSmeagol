@@ -3,7 +3,7 @@ import copy
 import threading
 from typing import Optional, Dict, Union, Any, List, Tuple, Type
 
-from libSmeagol.signal import Signal
+from .util.signal import Signal
 
 log = logging.getLogger(__name__.split(".")[-1])
 
