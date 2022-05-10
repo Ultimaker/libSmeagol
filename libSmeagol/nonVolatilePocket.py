@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from typing import List, Any, Dict
+from typing import List, Any, Dict, Optional
 
 from .timerPocket import TimerPocket
 
@@ -32,6 +32,10 @@ class NonVolatilePocket(TimerPocket):
     ## Gets the filename, including the new path
     #  @return The fully qualified filename
     def getFilename(self) -> str:
+        i = 0.0
+        j = None  # type: Optional[Dict]
+        i = j
+
         return self.__preferences_file
 
     ## Force to save the current preferences to disk.
