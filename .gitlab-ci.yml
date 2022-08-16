@@ -1,6 +1,6 @@
 include:
   - project: ultimaker/embedded/prime-jedi
-    ref: master
+    ref: CES-1563_Colorado_Nightly_Builds
     file: /gitlab_ci_templates/jedi-gitlab-ci-template.yml
 
 complexity:
